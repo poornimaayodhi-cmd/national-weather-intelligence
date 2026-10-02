@@ -123,9 +123,26 @@ export const SpatialCommandCenter: React.FC<SpatialCommandCenterProps> = ({
       {/* ========================================================================= */}
       {/* 1. HERO EXPERIENCE: 3D EARTH / INDIA SPATIAL STAGE                        */}
       {/* ========================================================================= */}
-      <section className="relative rounded-3xl bg-[#020612]/95 border border-cyan-500/25 backdrop-blur-xl shadow-2xl overflow-hidden">
-        {/* Subtle Cyber Grid Coordinates Overlay in Canvas Border */}
-        <div className="absolute top-3 left-4 z-20 pointer-events-none">
+      <section className="relative rounded-3xl bg-[#020612]/95 border border-cyan-500/25 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col">
+        {/* Mobile & Tablet Reflow Header: Shown only on screens < lg so it doesn't obstruct 3D Earth */}
+        <div className="p-4 sm:p-5 lg:hidden border-b border-slate-800/80 bg-slate-950/85">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-widest mb-1">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span>NATIONAL WEATHER INTELLIGENCE ENGINE • 3D SPATIAL ORBIT</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none uppercase">
+            NATIONAL WEATHER
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-purple-400 mt-1">
+              INTELLIGENCE
+            </span>
+          </h1>
+          <p className="text-[11px] sm:text-xs text-slate-300 font-mono mt-1.5 tracking-wide">
+            LIVE / INDIA / {activeTimelineOption.timeIST} • SOURCE_COUNT: 24 • CONFIDENCE: 91.4%
+          </p>
+        </div>
+
+        {/* Subtle Cyber Grid Coordinates Overlay in Canvas Border (Desktop lg:) */}
+        <div className="hidden lg:block absolute top-3 left-4 z-20 pointer-events-none">
           <div className="flex items-center gap-2 text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-widest">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
             <span>NATIONAL WEATHER INTELLIGENCE ENGINE • 3D SPATIAL ORBIT</span>
@@ -147,8 +164,8 @@ export const SpatialCommandCenter: React.FC<SpatialCommandCenterProps> = ({
           focusTarget={focusTarget}
         />
 
-        {/* Floating Spatial Left Overlay: Minimal Hero Title & Spatial Layers */}
-        <div className="absolute top-14 left-4 sm:left-6 z-20 max-w-sm sm:max-w-md pointer-events-none">
+        {/* Floating Spatial Left Overlay: Exact approved base UI on desktop (lg:) */}
+        <div className="hidden lg:block absolute top-14 left-4 sm:left-6 z-20 max-w-sm sm:max-w-md pointer-events-none">
           <div className="pointer-events-auto space-y-3.5">
             {/* Clean, Bold, Minimal Title per Prompt */}
             <div>
@@ -169,6 +186,15 @@ export const SpatialCommandCenter: React.FC<SpatialCommandCenterProps> = ({
               onSelectLayer={(layerId) => setActiveLayer(layerId)}
             />
           </div>
+        </div>
+
+        {/* Mobile & Tablet Reflow Section: Spatial Data Stack L01–L05 below Earth */}
+        <div className="p-3.5 sm:p-5 lg:hidden border-t border-slate-800/80 bg-slate-950/90">
+          <SpatialLayerSelector
+            activeLayer={activeLayer}
+            onSelectLayer={(layerId) => setActiveLayer(layerId)}
+            compact={true}
+          />
         </div>
 
         {/* Interactive Layer Detail Banner when a Layer is selected */}
@@ -261,7 +287,7 @@ export const SpatialCommandCenter: React.FC<SpatialCommandCenterProps> = ({
       {/* ========================================================================= */}
       {/* 3. FLOATING INTELLIGENCE INDICATORS                                       */}
       {/* ========================================================================= */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Metric 1 */}
         <div
           onClick={onNavigateToModule1}

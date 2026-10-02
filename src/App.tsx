@@ -27,6 +27,8 @@ import {
   LogOut,
   ChevronDown,
   Navigation,
+  Menu,
+  X,
 } from 'lucide-react';
 import { WeatherReport, IngestionStats, SourceType, DuplicateStatus } from './types.ts';
 import { ReportCard } from './components/ReportCard.tsx';
@@ -98,6 +100,7 @@ function MainDashboard() {
 
   // User Profile Dropdown Menu in Top Bar
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [reports, setReports] = useState<WeatherReport[]>([]);
   const [stats, setStats] = useState<IngestionStats | null>(null);
@@ -229,11 +232,14 @@ function MainDashboard() {
       <AtmosphericGeospatialBackground />
 
       {/* Top Navigation Bar */}
-      <header className="bg-slate-900/90 border-b border-slate-800/90 backdrop-blur-md sticky top-0 z-30 shadow-lg">
-        <div className="w-full max-w-[1536px] mx-auto px-2 sm:px-3 lg:px-4 h-13 sm:h-14 flex items-center justify-between gap-1.5 sm:gap-2">
+      <header className="bg-slate-900/95 border-b border-slate-800/90 backdrop-blur-md sticky top-0 z-30 shadow-lg">
+        <div className="w-full max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 h-13 sm:h-14 flex items-center justify-between gap-2">
           {/* Logo / System Identity */}
           <div
-            onClick={() => setCurrentModule('COMMAND_CENTER')}
+            onClick={() => {
+              setCurrentModule('COMMAND_CENTER');
+              setIsMobileMenuOpen(false);
+            }}
             className="flex items-center gap-1.5 sm:gap-2 shrink-0 cursor-pointer"
             title="National Weather Big Data Analytics Platform"
           >
@@ -242,7 +248,8 @@ function MainDashboard() {
             </div>
             <div className="flex items-center gap-1.5">
               <h1 className="text-xs sm:text-sm font-bold text-white leading-tight whitespace-nowrap">
-                NATIONAL WEATHER BIG DATA
+                <span className="hidden sm:inline">NATIONAL WEATHER BIG DATA</span>
+                <span className="sm:hidden">WEATHER BIG DATA</span>
               </h1>
               <span className="text-[9px] font-semibold bg-cyan-950/80 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800/60 whitespace-nowrap hidden 2xl:inline-block">
                 INTELLIGENCE PLATFORM
@@ -250,8 +257,8 @@ function MainDashboard() {
             </div>
           </div>
 
-          {/* Navigation Bar: Zero-scroll compact command tabs */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink min-w-0">
+          {/* Desktop Navigation Tabs (>= md screens) */}
+          <div className="hidden md:flex items-center gap-1 sm:gap-1.5 shrink min-w-0">
             <div className="flex items-center p-0.5 bg-slate-950/90 border border-slate-800 rounded-lg sm:rounded-xl gap-0.5 sm:gap-1">
               {/* OVERVIEW (3D EARTH) */}
               <button
@@ -312,7 +319,7 @@ function MainDashboard() {
                 }`}
               >
                 <Bookmark className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden md:inline">Saved</span>
+                <span className="hidden lg:inline">Saved</span>
               </button>
 
               {/* ALERTS FEED */}
@@ -326,7 +333,7 @@ function MainDashboard() {
                 }`}
               >
                 <Bell className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden md:inline">Alerts</span>
+                <span className="hidden lg:inline">Alerts</span>
                 {unreadAlertsCount > 0 && (
                   <span className="px-1 py-0.2 rounded-full text-[8.5px] font-bold bg-rose-500 text-white">
                     {unreadAlertsCount}
@@ -352,34 +359,52 @@ function MainDashboard() {
                 </button>
               )}
             </div>
+          </div>
 
+          {/* Right Controls: Copilot + User Menu + Mobile Hamburger */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* AI Weather Copilot Button */}
             <button
               id="btn-top-copilot"
               onClick={() => setIsCopilotOpen(!isCopilotOpen)}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-[10.5px] sm:text-[11px] font-semibold rounded-md sm:rounded-lg shadow-xs transition-all shrink-0 whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-[10.5px] sm:text-[11px] font-semibold rounded-md sm:rounded-lg shadow-xs transition-all shrink-0 whitespace-nowrap cursor-pointer"
               title="Open AI Weather Copilot"
             >
               <Sparkles className="w-3.5 h-3.5 text-cyan-200 animate-pulse" />
               <span className="hidden sm:inline">AI Copilot</span>
-              <span className="sm:hidden">Copilot</span>
+              <span className="sm:hidden text-[10px]">Copilot</span>
             </button>
 
-            {/* User Profile / Auth Button */}
+            {/* Mobile Alerts Icon button (Visible on < md) */}
+            <button
+              type="button"
+              onClick={() => setCurrentModule('ALERTS')}
+              className="md:hidden relative p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+              title="Alerts"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadAlertsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {unreadAlertsCount}
+                </span>
+              )}
+            </button>
+
+            {/* User Profile / Auth Button (Desktop & Tablet) */}
             {isAuthenticated ? (
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
-                  className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-lg bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono transition-colors cursor-pointer"
+                  className="flex items-center gap-1 sm:gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-lg bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono transition-colors cursor-pointer"
                 >
                   <div className="w-6 h-6 rounded-md bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px]">
                     {currentUser?.name?.charAt(0) || 'U'}
                   </div>
-                  <span className="hidden lg:inline text-[11px] font-bold">
+                  <span className="hidden xl:inline text-[11px] font-bold">
                     {currentUser?.name?.split(' ')[0]}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                  <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:inline" />
                 </button>
 
                 {showUserDropdown && (
@@ -459,13 +484,235 @@ function MainDashboard() {
                 </button>
               </div>
             )}
+
+            {/* Mobile Navigation Drawer Toggle Button (< md) */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-1.5 rounded-lg bg-slate-950/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-900 transition-colors"
+              aria-label="Toggle navigation menu"
+            >
+              {isMobileMenuOpen ? <X className="w-4 h-4 text-cyan-400" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Slide-down / Drawer (Open on Mobile) */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-slate-950/98 border-b border-cyan-500/30 px-4 py-3 space-y-3 animate-in slide-in-from-top-2 duration-150 text-xs font-mono">
+            {/* User Info Strip if logged in */}
+            {isAuthenticated && (
+              <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-white">{currentUser?.name}</div>
+                  <div className="text-[10px] text-cyan-300">{currentUser?.email}</div>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
+                  {currentUser?.role}
+                </span>
+              </div>
+            )}
+
+            {/* Mobile Nav Links */}
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('COMMAND_CENTER');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-2 rounded-lg text-left flex items-center gap-2 ${
+                  currentModule === 'COMMAND_CENTER'
+                    ? 'bg-cyan-600 text-white font-bold'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
+              >
+                <Compass className="w-3.5 h-3.5 text-cyan-300" />
+                <span>3D Overview</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('LIVE_WEATHER');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-2 rounded-lg text-left flex items-center gap-2 ${
+                  currentModule === 'LIVE_WEATHER'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
+              >
+                <CloudSun className="w-3.5 h-3.5 text-blue-300" />
+                <span>Live Weather</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('EVENTS');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-2 rounded-lg text-left flex items-center gap-2 ${
+                  currentModule === 'EVENTS'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
+              >
+                <Radio className="w-3.5 h-3.5 text-sky-400" />
+                <span>Events Feed</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('SAVED');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-2 rounded-lg text-left flex items-center gap-2 ${
+                  currentModule === 'SAVED'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5 text-amber-400" />
+                <span>Saved Intel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('ALERTS');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-2 rounded-lg text-left flex items-center justify-between ${
+                  currentModule === 'ALERTS'
+                    ? 'bg-rose-600 text-white font-bold'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Bell className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Alerts Feed</span>
+                </span>
+                {unreadAlertsCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-500 text-white">
+                    {unreadAlertsCount}
+                  </span>
+                )}
+              </button>
+
+              {role === 'ADMIN' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentModule('ADMIN_CONSOLE');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`p-2 rounded-lg text-left flex items-center gap-2 ${
+                    currentModule === 'ADMIN_CONSOLE'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'bg-purple-950/40 text-purple-300 border border-purple-800/50'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5 text-purple-300" />
+                  <span>Admin Console</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('PROFILE');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-2 rounded-lg text-left flex items-center gap-2 ${
+                  currentModule === 'PROFILE'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
+              >
+                <User className="w-3.5 h-3.5 text-indigo-300" />
+                <span>My Profile</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('SETTINGS');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-2 rounded-lg text-left flex items-center gap-2 ${
+                  currentModule === 'SETTINGS'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
+              >
+                <Sliders className="w-3.5 h-3.5 text-slate-400" />
+                <span>Settings</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentModule('LANDING');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="p-2 rounded-lg text-left flex items-center gap-2 bg-slate-900/80 text-cyan-300 hover:text-white col-span-2"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Landing Page View</span>
+              </button>
+            </div>
+
+            {/* Mobile Actions: Focus on Me & Sign In/Out */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleFocusOnMe();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10.5px] font-bold uppercase flex items-center gap-1.5"
+              >
+                <Navigation className="w-3 h-3 rotate-45 text-cyan-400" />
+                <span>Focus On Me</span>
+              </button>
+
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    signOut();
+                    setIsMobileMenuOpen(false);
+                    setCurrentModule('LANDING');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-rose-950/60 border border-rose-500/40 text-rose-300 text-[10.5px] font-bold uppercase flex items-center gap-1.5"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>Sign Out</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthModalMode('SIGN_IN');
+                    setIsAuthModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-[10.5px] font-bold uppercase"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* 3-Level Fallback Location Status Strip with [ FOCUS ON ME ] */}
       <div className="bg-[#0A1424] border-b border-slate-800/80 px-3 sm:px-4 py-1.5 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="w-full max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2.5">
             <LocationStatusIndicator />
             <button
@@ -495,7 +742,7 @@ function MainDashboard() {
 
       {/* Smart India Hackathon Demonstration Banner */}
       <div className="bg-[#0A1628] border-b border-amber-500/25 px-4 py-2 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5 text-xs">
+        <div className="w-full max-w-[1800px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
               SIH 2026 EVALUATION DEMO
@@ -529,7 +776,7 @@ function MainDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 relative z-10">
+      <main className="w-full max-w-7xl 2xl:max-w-[1600px] 3xl:max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 py-4 relative z-10">
         {/* OVERVIEW / 3D EARTH DASHBOARD */}
         {currentModule === 'COMMAND_CENTER' && (
           <SpatialCommandCenter

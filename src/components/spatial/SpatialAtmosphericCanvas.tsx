@@ -414,10 +414,10 @@ export const SpatialAtmosphericCanvas: React.FC<SpatialAtmosphericCanvasProps> =
       ctx.fillStyle = '#020612';
       ctx.fillRect(0, 0, width, height);
 
-      // Globe Geometry setup (placed toward center/right per requirement)
-      const globeCenterX = width * 0.58;
+      // Globe Geometry setup (responsive centering: centered on mobile/tablet, slightly offset on wide desktop)
+      const globeCenterX = width < 768 ? width * 0.5 : width < 1200 ? width * 0.52 : width * 0.56;
       const globeCenterY = height * 0.5;
-      const baseRadius = Math.min(width, height) * 0.36 * zoom;
+      const baseRadius = Math.min(width, height) * (width < 640 ? 0.38 : 0.36) * zoom;
 
       // 1. Draw Outer Atmospheric Glow Halo
       const atmoGrad = ctx.createRadialGradient(
@@ -997,15 +997,16 @@ export const SpatialAtmosphericCanvas: React.FC<SpatialAtmosphericCanvasProps> =
         const z2 = y * sinX + z1 * cosX;
 
         if (z2 > 0) {
-          const globeCenterX = canvasRef.current.clientWidth * 0.58;
-          const globeCenterY = canvasRef.current.clientHeight * 0.5;
-          const baseRadius =
-            Math.min(canvasRef.current.clientWidth, canvasRef.current.clientHeight) * 0.36 * zoom;
+          const cWidth = canvasRef.current.clientWidth;
+          const cHeight = canvasRef.current.clientHeight;
+          const globeCenterX = cWidth < 768 ? cWidth * 0.5 : cWidth < 1200 ? cWidth * 0.52 : cWidth * 0.56;
+          const globeCenterY = cHeight * 0.5;
+          const baseRadius = Math.min(cWidth, cHeight) * (cWidth < 640 ? 0.38 : 0.36) * zoom;
 
           const screenX = globeCenterX + x1 * baseRadius * 1.06;
           const screenY = globeCenterY + y2 * baseRadius * 1.06;
 
-          if (Math.hypot(mouseX - screenX, mouseY - screenY) < 22) {
+          if (Math.hypot(mouseX - screenX, mouseY - screenY) < 26) {
             foundEvent = node;
             break;
           }
@@ -1034,10 +1035,11 @@ export const SpatialAtmosphericCanvas: React.FC<SpatialAtmosphericCanvasProps> =
           const z2 = y * sinX + z1 * cosX;
 
           if (z2 > 0) {
-            const globeCenterX = canvasRef.current.clientWidth * 0.58;
-            const globeCenterY = canvasRef.current.clientHeight * 0.5;
-            const baseRadius =
-              Math.min(canvasRef.current.clientWidth, canvasRef.current.clientHeight) * 0.36 * zoom;
+            const cWidth = canvasRef.current.clientWidth;
+            const cHeight = canvasRef.current.clientHeight;
+            const globeCenterX = cWidth < 768 ? cWidth * 0.5 : cWidth < 1200 ? cWidth * 0.52 : cWidth * 0.56;
+            const globeCenterY = cHeight * 0.5;
+            const baseRadius = Math.min(cWidth, cHeight) * (cWidth < 640 ? 0.38 : 0.36) * zoom;
 
             const screenX = globeCenterX + x1 * baseRadius * 1.002;
             const screenY = globeCenterY + y2 * baseRadius * 1.002;
@@ -1081,24 +1083,122 @@ export const SpatialAtmosphericCanvas: React.FC<SpatialAtmosphericCanvasProps> =
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     lastUserInteractionTimeRef.current = Date.now();
-    setZoom((z) => Math.max(0.7, Math.min(1.8, z - e.deltaY * 0.001)));
+    setZoom((z) => Math.max(0.7, Math.min(1.85, z - e.deltaY * 0.001)));
+  };
+
+  // Touch Handlers for Mobile & Tablet (One-finger drag rotate, two-finger pinch zoom, tap select)
+  const touchStartDistRef = useRef<number | null>(null);
+  const touchStartZoomRef = useRef<number>(1.0);
+  const touchStartTimeRef = useRef<number>(0);
+  const touchMovedRef = useRef<boolean>(false);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    setIsAutoRotating(false);
+    lastUserInteractionTimeRef.current = Date.now();
+    touchStartTimeRef.current = Date.now();
+    touchMovedRef.current = false;
+
+    if (e.touches.length === 1) {
+      isDraggingRef.current = true;
+      lastMousePosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      isDraggingRef.current = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchStartDistRef.current = Math.hypot(dx, dy);
+      touchStartZoomRef.current = zoom;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    lastUserInteractionTimeRef.current = Date.now();
+    touchMovedRef.current = true;
+
+    if (e.touches.length === 1 && isDraggingRef.current) {
+      const deltaX = e.touches[0].clientX - lastMousePosRef.current.x;
+      const deltaY = e.touches[0].clientY - lastMousePosRef.current.y;
+      lastMousePosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+      setRotationY((prev) => prev + deltaX * 0.007);
+      setRotationX((prev) => Math.max(-1.1, Math.min(1.1, prev - deltaY * 0.007)));
+    } else if (e.touches.length === 2 && touchStartDistRef.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const ratio = dist / touchStartDistRef.current;
+      setZoom(Math.max(0.7, Math.min(1.85, touchStartZoomRef.current * ratio)));
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    isDraggingRef.current = false;
+    touchStartDistRef.current = null;
+
+    // Mobile tap detection on event or state
+    if (!touchMovedRef.current && Date.now() - touchStartTimeRef.current < 280 && e.changedTouches.length === 1) {
+      if (!canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const touchX = e.changedTouches[0].clientX - rect.left;
+      const touchY = e.changedTouches[0].clientY - rect.top;
+
+      const cWidth = canvasRef.current.clientWidth;
+      const cHeight = canvasRef.current.clientHeight;
+      const globeCenterX = cWidth < 768 ? cWidth * 0.5 : cWidth < 1200 ? cWidth * 0.52 : cWidth * 0.56;
+      const globeCenterY = cHeight * 0.5;
+      const baseRadius = Math.min(cWidth, cHeight) * (cWidth < 640 ? 0.38 : 0.36) * zoom;
+
+      let tappedEvent: SpatialEventNode | null = null;
+      for (const node of SPATIAL_EVENT_NODES) {
+        const latRad = (node.lat * Math.PI) / 180;
+        const lonRad = (node.lng * Math.PI) / 180;
+        let x = Math.cos(latRad) * Math.sin(lonRad);
+        let y = -Math.sin(latRad);
+        let z = Math.cos(latRad) * Math.cos(lonRad);
+
+        const cosY = Math.cos(rotationY);
+        const sinY = Math.sin(rotationY);
+        const x1 = x * cosY - z * sinY;
+        const z1 = x * sinY + z * cosY;
+
+        const cosX = Math.cos(rotationX);
+        const sinX = Math.sin(rotationX);
+        const y2 = y * cosX - z1 * sinX;
+        const z2 = y * sinX + z1 * cosX;
+
+        if (z2 > 0) {
+          const screenX = globeCenterX + x1 * baseRadius * 1.06;
+          const screenY = globeCenterY + y2 * baseRadius * 1.06;
+          if (Math.hypot(touchX - screenX, touchY - screenY) < 28) {
+            tappedEvent = node;
+            break;
+          }
+        }
+      }
+
+      if (tappedEvent) {
+        centerOnEvent(tappedEvent);
+      }
+    }
   };
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[560px] sm:h-[640px] lg:h-[720px] overflow-hidden select-none"
+      className="relative w-full h-[360px] sm:h-[460px] md:h-[540px] lg:h-[620px] xl:h-[660px] overflow-hidden select-none touch-none"
     >
       {/* 3D Canvas Viewport */}
       <canvas
         ref={canvasRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing block"
+        className="w-full h-full cursor-grab active:cursor-grabbing block touch-none"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onClick={handleClick}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       />
 
       {/* Floating 4-Mode Toggle (RADAR | SATELLITE | EVENTS | THREAT) */}

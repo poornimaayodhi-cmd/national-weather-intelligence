@@ -1,0 +1,6 @@
+{
+  "name": "Multi-Source Weather Ingestion Engine",
+  "description": "Multi-source weather ingestion, cross-source evidence correlation, AI verification, and operational decision support with explainable event action panels.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
